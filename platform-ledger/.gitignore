@@ -1,0 +1,39 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test
+*.test
+*.out
+
+# Dependencies
+vendor/
+go.work
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+bin/
+
+# Test coverage
+coverage.out
+coverage.html
+docs/docs.go
+docs/swagger.json
+docs/swagger.yaml

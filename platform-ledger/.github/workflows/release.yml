@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Build binaries
+      run: |
+        # Linux
+        GOOS=linux GOARCH=amd64 go build -o bin/ledger-api-linux-amd64 cmd/api/main.go
+        
+        # macOS
+        GOOS=darwin GOARCH=amd64 go build -o bin/ledger-api-darwin-amd64 cmd/api/main.go
+        GOOS=darwin GOARCH=arm64 go build -o bin/ledger-api-darwin-arm64 cmd/api/main.go
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          bin/ledger-api-linux-amd64
+          bin/ledger-api-darwin-amd64
+          bin/ledger-api-darwin-arm64
+        generate_release_notes: true

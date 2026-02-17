@@ -1,0 +1,31 @@
+# Laravel
+/platform-api/node_modules
+/platform-api/public/hot
+/platform-api/public/storage
+/platform-api/storage/*.key
+/platform-api/vendor
+/platform-api/.env
+/platform-api/.env.backup
+/platform-api/.phpunit.result.cache
+/platform-api/Homestead.json
+/platform-api/Homestead.yaml
+/platform-api/npm-debug.log
+/platform-api/yarn-error.log
+/platform-api/.idea
+/platform-api/.vscode
+
+# Go Ledger
+/platform-ledger/bin/
+/platform-ledger/*.db
+/platform-ledger/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Database
+*.sql
+*.sqlite
