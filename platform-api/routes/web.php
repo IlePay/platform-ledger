@@ -6,6 +6,7 @@ use App\Http\Controllers\Client\MerchantController;
 use App\Http\Controllers\Client\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+
 // Home
 Route::get('/', function () {
     return view('client.home');
@@ -60,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
         $notification->markAsRead();
         return redirect()->back()->with('success', 'Notification marquée comme lue');
     })->name('notification.read');
-    
+    Route::get('/transactions/export', [ClientDashboardController::class, 'exportTransactions'])->name('transactions.export');
     Route::post('/notifications/mark-all-read', function() {
         auth()->user()->unreadNotifications->markAsRead();
         return redirect()->back()->with('success', 'Toutes les notifications ont été marquées comme lues');

@@ -174,7 +174,40 @@
                     </p>
                 </div>
             </div>
-
+            <!-- Recherche & Filtres -->
+            <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+                <form method="GET" class="space-y-4">
+                    <div class="grid md:grid-cols-4 gap-4">
+                        <input type="text" name="search" value="{{ $search }}" 
+                            placeholder="Rechercher..." 
+                            class="px-4 py-2 border rounded-lg">
+                        
+                        <select name="type" class="px-4 py-2 border rounded-lg">
+                            <option value="">Tous types</option>
+                            <option value="TRANSFER" {{ $type == 'TRANSFER' ? 'selected' : '' }}>Transfert</option>
+                            <option value="REFUND" {{ $type == 'REFUND' ? 'selected' : '' }}>Remboursement</option>
+                        </select>
+                        
+                        <select name="period" class="px-4 py-2 border rounded-lg">
+                            <option value="all" {{ $period == 'all' ? 'selected' : '' }}>Toute période</option>
+                            <option value="today" {{ $period == 'today' ? 'selected' : '' }}>Aujourd'hui</option>
+                            <option value="week" {{ $period == 'week' ? 'selected' : '' }}>Cette semaine</option>
+                            <option value="month" {{ $period == 'month' ? 'selected' : '' }}>Ce mois</option>
+                        </select>
+                        
+                        <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-search mr-2"></i>Rechercher
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4">
+                    <a href="{{ route('transactions.export', ['period' => $period]) }}" 
+                    class="inline-block bg-green-500 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-download mr-2"></i>Exporter CSV
+                    </a>
+                </div>
+            </div>
             <!-- Transactions -->
             <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
                 <div class="flex items-center justify-between mb-6">
