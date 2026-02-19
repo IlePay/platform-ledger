@@ -63,6 +63,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/money-request/{id}/accept', [\App\Http\Controllers\Client\MoneyRequestController::class, 'accept'])->name('money-request.accept');
     Route::post('/money-request/{id}/decline', [\App\Http\Controllers\Client\MoneyRequestController::class, 'decline'])->name('money-request.decline');
 
+    // Contacts favoris
+    Route::get('/contacts', [\App\Http\Controllers\Client\ContactsController::class, 'index'])->name('contacts.index');
+    Route::post('/contacts/add', [\App\Http\Controllers\Client\ContactsController::class, 'add'])->name('contacts.add');
+    Route::delete('/contacts/{id}', [\App\Http\Controllers\Client\ContactsController::class, 'remove'])->name('contacts.remove');
+    Route::get('/contacts/{id}/quick-send', [\App\Http\Controllers\Client\ContactsController::class, 'quickSend'])->name('contacts.quick-send');
+
     // Notifications
     Route::post('/notifications/{id}/read', function($id) {
         $notification = auth()->user()->notifications()->findOrFail($id);

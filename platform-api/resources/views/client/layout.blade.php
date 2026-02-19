@@ -66,7 +66,9 @@
                         <i class="fas fa-store"></i>
                     </a>
                     @endif
-                    
+                    <a href="{{ route('contacts.index') }}" class="text-gray-600 hover:text-primary">
+                        <i class="fas fa-address-book text-2xl"></i>
+                    </a>
                     <!-- Notifications -->
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open" class="relative">

@@ -115,4 +115,66 @@
         </div>
     </div>
 </div>
+<!-- Limites -->
+            <div class="bg-white rounded-2xl shadow-sm p-6 mb-8">
+                <h3 class="font-bold text-lg mb-4">Mes limites</h3>
+                <div class="space-y-4">
+                    <!-- Quotidienne -->
+                    <div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-600">Limite quotidienne</span>
+                            <span class="font-semibold">
+                                {{ number_format(auth()->user()->getRemainingDailyLimit(), 0, ',', ' ') }} / 
+                                {{ number_format(auth()->user()->daily_limit, 0, ',', ' ') }} XAF
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-primary h-3 rounded-full transition-all" 
+                                 style="width: {{ auth()->user()->getDailyLimitPercentage() }}%"></div>
+                        </div>
+                        @if(auth()->user()->getDailyLimitPercentage() >= 80)
+                        <p class="text-xs text-yellow-600 mt-1">
+                            ⚠️ Vous avez utilisé {{ number_format(auth()->user()->getDailyLimitPercentage(), 0) }}% de votre limite
+                        </p>
+                        @endif
+                    </div>
+                    
+                    <!-- Mensuelle -->
+                    <div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-600">Limite mensuelle</span>
+                            <span class="font-semibold">
+                                {{ number_format(auth()->user()->getRemainingMonthlyLimit(), 0, ',', ' ') }} / 
+                                {{ number_format(auth()->user()->monthly_limit, 0, ',', ' ') }} XAF
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            @php
+                                $monthlyPercentage = auth()->user()->monthly_limit > 0 
+                                    ? min(100, ((auth()->user()->monthly_limit - auth()->user()->getRemainingMonthlyLimit()) / auth()->user()->monthly_limit) * 100) 
+                                    : 0;
+                            @endphp
+                            <div class="bg-green-500 h-3 rounded-full transition-all" 
+                                 style="width: {{ $monthlyPercentage }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between pt-4 border-t">
+                        <div>
+                            <p class="text-xs text-gray-500">Niveau KYC</p>
+                            <p class="font-semibold">{{ auth()->user()->kyc_level }}</p>
+                        </div>
+                        @if(auth()->user()->kyc_level !== 'PREMIUM')
+                        <a href="{{ route('profile.index') }}" 
+                           class="text-xs bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg hover:bg-yellow-200">
+                            <i class="fas fa-arrow-up mr-1"></i>Upgrader
+                        </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 @endsection

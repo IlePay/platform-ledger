@@ -94,4 +94,54 @@ class User extends Authenticatable implements FilamentUser
     {
         return trim("{$this->first_name} {$this->last_name}") ?: $this->name ?: $this->phone;
     }
+
+    public function favoriteContacts()
+    {
+        return $this->belongsToMany(User::class, 'favorite_contacts', 'user_id', 'contact_id')
+            ->withPivot('nickname')
+            ->withTimestamps();
+    }
+
+    public function isFavorite($contactId): bool
+    {
+        return $this->favoriteContacts()->where('contact_id', $contactId)->exists();
+    }
+    public function transactionsReceived()
+    {
+        return $this->hasMany(Transaction::class, 'to_user_id');
+    }
+
+    public function transactionsSent()
+    {
+        return $this->hasMany(Transaction::class, 'from_user_id');
+    }
+
+    // Calcul limites restantes
+    public function getRemainingDailyLimit(): float
+    {
+        $todaySpent = Transaction::where('from_user_id', $this->id)
+            ->whereDate('created_at', today())
+            ->where('status', 'COMPLETED')
+            ->sum('amount');
+        
+        return max(0, $this->daily_limit - $todaySpent);
+    }
+
+    public function getRemainingMonthlyLimit(): float
+    {
+        $monthSpent = Transaction::where('from_user_id', $this->id)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->where('status', 'COMPLETED')
+            ->sum('amount');
+        
+        return max(0, $this->monthly_limit - $monthSpent);
+    }
+
+    public function getDailyLimitPercentage(): float
+    {
+        if ($this->daily_limit == 0) return 0;
+        $remaining = $this->getRemainingDailyLimit();
+        return (($this->daily_limit - $remaining) / $this->daily_limit) * 100;
+    }
 }
