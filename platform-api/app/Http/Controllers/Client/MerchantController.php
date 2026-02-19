@@ -14,6 +14,76 @@ class MerchantController extends Controller
     {
     }
 
+    public function refund(Request $request, $transactionId)
+{
+    $transaction = \App\Models\Transaction::findOrFail($transactionId);
+    
+    // Vérifie que c'est le marchand qui a reçu le paiement
+    if ($transaction->to_user_id !== auth()->id()) {
+        abort(403, 'Non autorisé');
+    }
+    
+    // Vérifie pas déjà remboursé
+    if ($transaction->isRefunded()) {
+        return back()->withErrors(['error' => 'Transaction déjà remboursée']);
+    }
+    
+    $validated = $request->validate([
+        'amount' => 'required|numeric|min:1|max:' . $transaction->amount,
+        'reason' => 'nullable|string|max:255',
+    ]);
+    
+    // Crée le transfert de remboursement
+    $refund = $this->ledger->createTransfer(
+        \Str::uuid()->toString(),
+        auth()->user()->ledger_account_id, // Marchand
+        $transaction->fromUser->ledger_account_id, // Client original
+        $validated['amount'],
+        'XAF',
+        $validated['reason'] ?? "Remboursement transaction #{$transaction->id}"
+    );
+    
+    if (!$refund) {
+        return back()->withErrors(['error' => 'Échec du remboursement - solde insuffisant ?']);
+    }
+    
+    // Enregistre le remboursement
+    \App\Models\Transaction::create([
+        'ledger_transaction_id' => $refund['id'],
+        'idempotency_key' => $refund['idempotency_key'],
+        'from_user_id' => auth()->id(),
+        'to_user_id' => $transaction->from_user_id,
+        'from_account_id' => auth()->user()->ledger_account_id,
+        'to_account_id' => $transaction->fromUser->ledger_account_id,
+        'amount' => $validated['amount'],
+        'currency' => 'XAF',
+        'type' => 'REFUND',
+        'status' => 'COMPLETED',
+        'description' => $validated['reason'] ?? "Remboursement",
+        'parent_transaction_id' => $transaction->id,
+        'completed_at' => now(),
+    ]);
+    
+    // Marque l'originale comme remboursée
+    $transaction->update(['refunded_at' => now()]);
+    
+    // Notifie le client
+    $transaction->fromUser->notify(new \App\Notifications\RefundReceived(
+        $validated['amount'],
+        auth()->user()->business_name ?? auth()->user()->full_name
+    ));
+
+    if ($transaction->fromUser->sms_notifications) {
+    app(\App\Services\SMS\SmsManager::class)->sendRefundReceived(
+        $transaction->fromUser->phone,
+        $validated['amount'],
+        auth()->user()->business_name ?? auth()->user()->full_name
+    );
+    }
+    
+    return back()->with('success', "Remboursement de {$validated['amount']} XAF effectué !");
+}
+
     // Page publique de paiement (scan QR)
     public function paymentPage($qrCode)
     {
@@ -116,6 +186,15 @@ class MerchantController extends Controller
             "Paiement chez {$merchant->business_name}"
         ));
 
+        // SMS au marchand
+        if ($merchant->sms_notifications) {
+            app(\App\Services\SMS\SmsManager::class)->sendPaymentReceived(
+                $merchant->phone,
+                $validated['amount'],
+                $customer->full_name
+            );
+        }
+
         return redirect()->route('client.dashboard')
             ->with('success', "Paiement de {$validated['amount']} XAF effectué chez {$merchant->business_name} !");
     }
@@ -170,5 +249,96 @@ class MerchantController extends Controller
         'weeklySales', 'weeklyCount',
         'monthlySales', 'monthlyCount'
     ));
+}
+
+public function export(Request $request)
+{
+    $user = auth()->user();
+    
+    if ($user->account_type !== 'MERCHANT') {
+        abort(403);
+    }
+    
+    $format = $request->get('format', 'pdf'); // pdf ou csv
+    $period = $request->get('period', 'all'); // today, week, month, all
+    
+    // Filtrage par période
+    $query = \App\Models\Transaction::where('to_user_id', $user->id)
+        ->where('status', 'COMPLETED')
+        ->with('fromUser')
+        ->orderBy('created_at', 'desc');
+    
+    switch ($period) {
+        case 'today':
+            $query->whereDate('created_at', today());
+            $periodLabel = "Aujourd'hui";
+            break;
+        case 'week':
+            $query->whereBetween('created_at', [now()->startOfWeek(), now()]);
+            $periodLabel = "Cette semaine";
+            break;
+        case 'month':
+            $query->whereMonth('created_at', now()->month);
+            $periodLabel = "Ce mois";
+            break;
+        default:
+            $periodLabel = "Toutes les transactions";
+    }
+    
+    $transactions = $query->get();
+    $total = $transactions->sum('amount');
+    
+    if ($format === 'csv') {
+        return $this->exportCSV($transactions, $user, $periodLabel);
+    }
+    
+    return $this->exportPDF($transactions, $user, $periodLabel, $total);
+}
+
+private function exportPDF($transactions, $user, $periodLabel, $total)
+{
+    $pdf = \PDF::loadView('client.merchant.export-pdf', [
+        'transactions' => $transactions,
+        'merchant' => $user,
+        'period' => $periodLabel,
+        'total' => $total,
+        'date' => now()->format('d/m/Y'),
+    ]);
+    
+    $filename = 'transactions-' . $user->qr_code . '-' . now()->format('Y-m-d') . '.pdf';
+    
+    return $pdf->download($filename);
+}
+
+private function exportCSV($transactions, $user, $periodLabel)
+{
+    $filename = 'transactions-' . $user->qr_code . '-' . now()->format('Y-m-d') . '.csv';
+    
+    $headers = [
+        'Content-Type' => 'text/csv',
+        'Content-Disposition' => "attachment; filename=\"$filename\"",
+    ];
+    
+    $callback = function() use ($transactions) {
+        $file = fopen('php://output', 'w');
+        
+        // En-têtes CSV
+        fputcsv($file, ['Date', 'Client', 'Montant (XAF)', 'Description', 'Statut']);
+        
+        // Données
+        foreach ($transactions as $tx) {
+            fputcsv($file, [
+                $tx->created_at->format('d/m/Y H:i'),
+                $tx->fromUser ? $tx->fromUser->full_name : 'Inconnu',
+                number_format($tx->amount, 0, ',', ' '),
+                $tx->description ?? '',
+                $tx->status,
+            ]);
+        }
+        
+        fclose($file);
+    };
+    
+    return response()->stream($callback, 200, $headers);
 }
 }

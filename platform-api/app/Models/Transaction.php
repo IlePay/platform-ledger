@@ -24,12 +24,15 @@ class Transaction extends Model
         'description',
         'metadata',
         'completed_at',
+        'refunded_at',
+        'parent_transaction_id',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'metadata' => 'array',
         'completed_at' => 'datetime',
+        'refunded_at' => 'datetime',
     ];
 
     public function fromUser(): BelongsTo
@@ -40,5 +43,19 @@ class Transaction extends Model
     public function toUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'to_user_id');
+    }
+    public function parentTransaction()
+    {
+        return $this->belongsTo(Transaction::class, 'parent_transaction_id');
+    }
+
+    public function refundTransaction()
+    {
+        return $this->hasOne(Transaction::class, 'parent_transaction_id');
+    }
+
+    public function isRefunded(): bool
+    {
+        return $this->refunded_at !== null;
     }
 }

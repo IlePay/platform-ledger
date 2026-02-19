@@ -46,6 +46,8 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/merchant/qrcode', [MerchantController::class, 'downloadQrCode'])->name('merchant.qrcode');
+    Route::get('/merchant/export', [MerchantController::class, 'export'])->name('merchant.export');
+    Route::post('/merchant/transactions/{transaction}/refund', [MerchantController::class, 'refund'])->name('merchant.refund');
     Route::post('/notifications/{id}/read', function($id) {
     $notification = auth()->user()->notifications()->findOrFail($id);
     $notification->markAsRead();

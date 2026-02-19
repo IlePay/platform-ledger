@@ -116,6 +116,24 @@ class DashboardController extends Controller
             "Transfert reçu"
         ));
 
+        // SMS au destinataire
+        if ($recipient->sms_notifications) {
+            app(\App\Services\SMS\SmsManager::class)->sendPaymentReceived(
+                $recipient->phone,
+                $validated['amount'],
+                $user->full_name
+            );
+        }
+
+        // SMS à l'envoyeur
+        if ($user->sms_notifications) {
+            app(\App\Services\SMS\SmsManager::class)->sendPaymentSent(
+                $user->phone,
+                $validated['amount'],
+                $recipient->full_name
+            );
+        }
+
         return redirect()->route('client.dashboard')
             ->with('success', "Transfert de {$validated['amount']} XAF effectué !");
     }

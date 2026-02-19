@@ -40,4 +40,21 @@ return [
         'timeout' => env('LEDGER_API_TIMEOUT', 30),
     ],
 
+    // SMS Services
+'sms' => [
+    'driver' => env('SMS_DRIVER', 'log'), // twilio, africastalking, log
+],
+
+'twilio' => [
+    'sid' => env('TWILIO_SID'),
+    'token' => env('TWILIO_TOKEN'),
+    'from' => env('TWILIO_FROM'),
+],
+
+'africastalking' => [
+    'username' => env('AT_USERNAME', 'sandbox'),
+    'api_key' => env('AT_API_KEY'),
+    'from' => env('AT_FROM'),
+],
+
 ];
