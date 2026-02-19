@@ -43,6 +43,12 @@ class User extends Authenticatable implements FilamentUser
         'total_sales',
         'sales_count',  
         'avatar',
+        'two_factor_enabled',
+        'two_factor_code',
+        'two_factor_expires_at',
+        'two_factor_enabled',
+        'last_login_at',
+        'last_login_ip',
     ];
 
     protected $hidden = [
@@ -61,6 +67,8 @@ class User extends Authenticatable implements FilamentUser
         'daily_limit' => 'decimal:2',
         'monthly_limit' => 'decimal:2',
         'password' => 'hashed',
+        'two_factor_enabled' => 'boolean',
+        'two_factor_expires_at' => 'datetime',
     ];
 
     public function canAccessPanel(Panel $panel): bool
@@ -143,5 +151,61 @@ class User extends Authenticatable implements FilamentUser
         if ($this->daily_limit == 0) return 0;
         $remaining = $this->getRemainingDailyLimit();
         return (($this->daily_limit - $remaining) / $this->daily_limit) * 100;
+    }
+
+    // Relation login history
+    public function loginHistory()
+    {
+        return $this->hasMany(LoginHistory::class)->orderBy('created_at', 'desc');
+    }
+
+    // Générer code 2FA
+    public function generate2FACode()
+    {
+        $this->two_factor_code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $this->two_factor_expires_at = now()->addMinutes(5);
+        $this->save();
+        
+        return $this->two_factor_code;
+    }
+
+    // Vérifier code 2FA
+    public function verify2FACode($code)
+    {
+        if (!$this->two_factor_code || !$this->two_factor_expires_at) {
+            return false;
+        }
+        
+        if ($this->two_factor_expires_at->isPast()) {
+            return false;
+        }
+        
+        if ($this->two_factor_code !== $code) {
+            return false;
+        }
+        
+        // Code valide, on le supprime
+        $this->two_factor_code = null;
+        $this->two_factor_expires_at = null;
+        $this->save();
+        
+        return true;
+    }
+
+    // Connexion suspecte ?
+    public function isSuspiciousLogin($request)
+    {
+        $lastLogin = $this->loginHistory()->where('was_successful', true)->first();
+        
+        if (!$lastLogin) return false;
+        
+        // IP différente
+        if ($lastLogin->ip_address !== $request->ip()) return true;
+        
+        // Device différent
+        $currentDevice = LoginHistory::detectDevice($request->userAgent());
+        if ($lastLogin->device_type !== $currentDevice) return true;
+        
+        return false;
     }
 }

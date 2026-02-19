@@ -209,7 +209,59 @@
                     </button>
                 </form>
             </div>
+            
+            <!-- Sécurité 2FA -->
+            <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">Sécurité</h2>
+                
+                <!-- 2FA Toggle -->
+                <div class="p-4 border rounded-xl mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-shield-alt text-primary text-2xl"></i>
+                            <div>
+                                <p class="font-semibold">Authentification à deux facteurs</p>
+                                <p class="text-sm text-gray-500">Code SMS à chaque connexion</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            @if($user->two_factor_enabled)
+                            <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">Activée</span>
+                            @else
+                            <span class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">Désactivée</span>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <form action="{{ route('security.2fa.toggle') }}" method="POST" class="flex gap-3 items-end">
+                        @csrf
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium mb-2">Confirmer avec PIN</label>
+                            <input type="password" name="pin" required 
+                                class="w-full px-4 py-3 border rounded-lg" 
+                                placeholder="****">
+                        </div>
+                        <button type="submit" 
+                                class="px-6 py-3 rounded-lg font-semibold {{ $user->two_factor_enabled ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600' }} text-white">
+                            {{ $user->two_factor_enabled ? 'Désactiver' : 'Activer' }}
+                        </button>
+                    </form>
+                </div>
 
+                <!-- Historique connexions -->
+                <a href="{{ route('security.history') }}" 
+                class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-history text-gray-600 text-xl"></i>
+                        <div>
+                            <p class="font-semibold">Historique de connexion</p>
+                            <p class="text-sm text-gray-500">Voir toutes vos connexions</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </a>
+            </div>
+            
             <!-- Limites & KYC -->
             <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
                 <h2 class="text-xl font-bold mb-4">Limites de transaction</h2>

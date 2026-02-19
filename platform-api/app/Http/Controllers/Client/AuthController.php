@@ -3,18 +3,13 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Models\LoginHistory;
 use App\Models\User;
-use App\Services\LedgerClient;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function __construct(private LedgerClient $ledger)
-    {
-    }
-
     public function showLogin()
     {
         return view('client.auth.login');
@@ -23,6 +18,53 @@ class AuthController extends Controller
     public function showRegister()
     {
         return view('client.auth.register');
+    }
+
+    public function showRegisterMerchant()
+    {
+        return view('client.auth.register-merchant');
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'phone' => 'required',
+            'pin' => 'required',
+        ]);
+
+        $user = User::where('phone', $credentials['phone'])->first();
+
+        if (!$user || !\Hash::check($credentials['pin'], $user->pin)) {
+            if ($user) {
+                LoginHistory::log($user->id, $request, false, 'Invalid credentials');
+            }
+            return back()->withErrors(['error' => 'Identifiants incorrects']);
+        }
+
+        // Si 2FA activé
+        if ($user->two_factor_enabled) {
+            $code = $user->generate2FACode();
+            
+            if ($user->sms_notifications) {
+                app(\App\Services\SMS\SmsManager::class)->send(
+                    $user->phone,
+                    "🔐 IlePay: Votre code de connexion est {$code}. Valide 5 minutes."
+                );
+            }
+            
+            session(['2fa_user_id' => $user->id]);
+            return redirect()->route('2fa.verify');
+        }
+
+        // Login direct
+        auth()->login($user);
+        LoginHistory::log($user->id, $request, true);
+        
+        if ($user->isSuspiciousLogin($request)) {
+            $user->notify(new \App\Notifications\SuspiciousLogin($request->ip(), now()));
+        }
+
+        return redirect()->route('client.dashboard');
     }
 
     public function register(Request $request)
@@ -34,109 +76,57 @@ class AuthController extends Controller
             'pin' => 'required|string|min:4|max:6|confirmed',
         ]);
 
-        // Crée compte ledger
-        $ledgerAccount = $this->ledger->createAccount(
-            "user_" . str_replace('+', '', $validated['phone']),
-            'USER',
-            'XAF'
-        );
+        $ledger = app(\App\Services\LedgerClient::class);
+        $accountId = $ledger->createAccount($validated['phone'], 'XAF', "Compte {$validated['first_name']} {$validated['last_name']}");
 
-        if (!$ledgerAccount) {
-            return back()->withErrors(['error' => 'Erreur lors de la création du compte']);
-        }
-
-        // Crée utilisateur
         $user = User::create([
-            'name' => trim("{$validated['first_name']} {$validated['last_name']}"),
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'phone' => $validated['phone'],
             'pin' => Hash::make($validated['pin']),
-            'ledger_account_id' => $ledgerAccount['id'],
-            'kyc_level' => 'BASIC',
-            'daily_limit' => 50000,
-            'monthly_limit' => 500000,
-            'is_active' => true,
-            'role' => 'USER',
+            'ledger_account_id' => $accountId,
+            'account_type' => 'PERSONAL',
         ]);
 
-        Auth::login($user);
-
-        return redirect()->route('client.dashboard');
+        auth()->login($user);
+        return redirect()->route('client.dashboard')->with('success', 'Compte créé avec succès !');
     }
 
-    public function login(Request $request)
+    public function registerMerchant(Request $request)
     {
         $validated = $request->validate([
-            'phone' => 'required|string',
-            'pin' => 'required|string',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'phone' => 'required|string|unique:users,phone',
+            'pin' => 'required|string|min:4|max:6|confirmed',
+            'business_name' => 'required|string|max:255',
+            'business_type' => 'required|in:RESTAURANT,MARKET,BOUTIQUE,SERVICE,OTHER',
         ]);
 
-        $user = User::where('phone', $validated['phone'])->first();
+        $ledger = app(\App\Services\LedgerClient::class);
+        $accountId = $ledger->createAccount($validated['phone'], 'XAF', "Compte marchand {$validated['business_name']}");
 
-        if (!$user || !Hash::check($validated['pin'], $user->pin)) {
-            return back()->withErrors(['error' => 'Identifiants incorrects']);
-        }
+        $user = User::create([
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'phone' => $validated['phone'],
+            'pin' => Hash::make($validated['pin']),
+            'ledger_account_id' => $accountId,
+            'account_type' => 'MERCHANT',
+            'business_name' => $validated['business_name'],
+            'business_type' => $validated['business_type'],
+            'qr_code' => strtoupper(\Str::random(8)),
+        ]);
 
-        Auth::login($user);
-
-        return redirect()->route('client.dashboard');
+        auth()->login($user);
+        return redirect()->route('merchant.dashboard')->with('success', 'Compte marchand créé !');
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        Auth::logout();
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
         return redirect('/');
     }
-
-    public function showRegisterMerchant()
-{
-    return view('client.auth.register-merchant');
-}
-
-public function registerMerchant(Request $request)
-{
-    $validated = $request->validate([
-        'first_name' => 'required|string|max:255',
-        'last_name' => 'required|string|max:255',
-        'phone' => 'required|string|unique:users,phone',
-        'business_name' => 'required|string|max:255',
-        'business_type' => 'required|string',
-        'pin' => 'required|string|min:4|max:6|confirmed',
-    ]);
-
-    // Crée compte ledger
-    $ledgerAccount = $this->ledger->createAccount(
-        "merchant_" . str_replace('+', '', $validated['phone']),
-        'MERCHANT',
-        'XAF'
-    );
-
-    if (!$ledgerAccount) {
-        return back()->withErrors(['error' => 'Erreur lors de la création du compte']);
-    }
-
-    // Crée utilisateur marchand avec limites élevées
-        $user = User::create([
-        'name' => $validated['business_name'],
-        'first_name' => $validated['first_name'],
-        'last_name' => $validated['last_name'],
-        'phone' => $validated['phone'],
-        'pin' => Hash::make($validated['pin']),
-        'ledger_account_id' => $ledgerAccount['id'],
-        'account_type' => 'MERCHANT',
-        'business_name' => $validated['business_name'],
-        'business_type' => $validated['business_type'],
-        'qr_code' => 'M' . strtoupper(\Str::random(8)), // ← AJOUTE ÇA
-        'kyc_level' => 'STANDARD',
-        'daily_limit' => 500000,
-        'monthly_limit' => 5000000,
-        'is_active' => true,
-        'role' => 'USER',
-    ]);
-
-    Auth::login($user);
-
-    return redirect()->route('client.dashboard');
-}
 }

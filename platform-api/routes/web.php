@@ -33,7 +33,10 @@ Route::middleware('auth')->get('/api/notifications/check', function() {
         ])
     ]);
 });
-
+// 2FA (public)
+    Route::get('/2fa/verify', [\App\Http\Controllers\Client\TwoFactorController::class, 'showVerify'])->name('2fa.verify');
+    Route::post('/2fa/verify', [\App\Http\Controllers\Client\TwoFactorController::class, 'verify'])->name('2fa.verify.submit');
+    Route::post('/2fa/resend', [\App\Http\Controllers\Client\TwoFactorController::class, 'resend'])->name('2fa.resend');
 // Client Dashboard (PROTECTED)
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('client.logout');
@@ -55,6 +58,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/profile/pin', [ProfileController::class, 'updatePin'])->name('profile.pin');
     Route::post('/profile/notifications', [ProfileController::class, 'updateNotifications'])->name('profile.notifications');
     
+    // Security
+    Route::post('/security/2fa/toggle', [\App\Http\Controllers\Client\TwoFactorController::class, 'toggle'])->name('security.2fa.toggle');
+    Route::get('/security/history', [\App\Http\Controllers\Client\TwoFactorController::class, 'history'])->name('security.history');
+
     // Money Requests
     Route::get('/money-request/create', [\App\Http\Controllers\Client\MoneyRequestController::class, 'create'])->name('money-request.create');
     Route::post('/money-request', [\App\Http\Controllers\Client\MoneyRequestController::class, 'store'])->name('money-request.store');

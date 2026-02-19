@@ -114,6 +114,9 @@
                             @endforelse
                         </div>
                     </div>
+                    <a href="{{ route('security.history') }}" class="text-gray-600 hover:text-primary" title="Sécurité">
+                        <i class="fas fa-shield-alt text-2xl"></i>
+                    </a>
                     
                     <!-- Profil -->
                     <a href="{{ route('profile.index') }}" class="text-gray-600 hover:text-primary">
