@@ -7,22 +7,6 @@
 
     <!-- Header -->
     <div class="gradient-bg text-white">
-        <nav class="container mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
-                <img src="/images/logo.png" alt="IlePay" class="h-10">
-                <div class="flex items-center gap-6">
-                    <a href="{{ route('client.dashboard') }}" class="text-white hover:text-secondary transition">
-                        <i class="fas fa-user mr-1"></i>Mon Compte
-                    </a>
-                    <form action="{{ route('client.logout') }}" method="POST">
-                        @csrf
-                        <button class="text-white hover:text-secondary transition">
-                            <i class="fas fa-sign-out-alt mr-1"></i>Déconnexion
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </nav>
 
         <!-- Business Header -->
         <div class="container mx-auto px-6 pb-24 pt-8">

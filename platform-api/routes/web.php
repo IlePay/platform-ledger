@@ -55,6 +55,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/profile/pin', [ProfileController::class, 'updatePin'])->name('profile.pin');
     Route::post('/profile/notifications', [ProfileController::class, 'updateNotifications'])->name('profile.notifications');
     
+    // Money Requests
+    Route::get('/money-request/create', [\App\Http\Controllers\Client\MoneyRequestController::class, 'create'])->name('money-request.create');
+    Route::post('/money-request', [\App\Http\Controllers\Client\MoneyRequestController::class, 'store'])->name('money-request.store');
+    Route::get('/money-request/sent', [\App\Http\Controllers\Client\MoneyRequestController::class, 'sent'])->name('money-request.sent');
+    Route::get('/money-request/received', [\App\Http\Controllers\Client\MoneyRequestController::class, 'received'])->name('money-request.received');
+    Route::post('/money-request/{id}/accept', [\App\Http\Controllers\Client\MoneyRequestController::class, 'accept'])->name('money-request.accept');
+    Route::post('/money-request/{id}/decline', [\App\Http\Controllers\Client\MoneyRequestController::class, 'decline'])->name('money-request.decline');
+
     // Notifications
     Route::post('/notifications/{id}/read', function($id) {
         $notification = auth()->user()->notifications()->findOrFail($id);
