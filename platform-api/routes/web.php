@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Client\AuthController;
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\MerchantController;
+use App\Http\Controllers\Client\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // Home
@@ -22,7 +22,6 @@ Route::post('/register/merchant', [AuthController::class, 'registerMerchant'])->
 // Page paiement publique (scan QR)
 Route::get('/pay/{qrCode}', [MerchantController::class, 'paymentPage'])->name('merchant.pay');
 
-
 Route::middleware('auth')->get('/api/notifications/check', function() {
     $notifications = auth()->user()->unreadNotifications->take(5);
     return response()->json([
@@ -37,25 +36,33 @@ Route::middleware('auth')->get('/api/notifications/check', function() {
 // Client Dashboard (PROTECTED)
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('client.logout');
+    
     Route::get('/dashboard', [ClientDashboardController::class, 'index'])->name('client.dashboard');
     Route::get('/transfer', [ClientDashboardController::class, 'transfer'])->name('client.transfer');
     Route::post('/transfer', [ClientDashboardController::class, 'sendMoney'])->name('client.transfer.send');
+    
     Route::post('/pay/{qrCode}', [MerchantController::class, 'processPay'])->name('merchant.pay.process');
     Route::get('/merchant/dashboard', [MerchantController::class, 'dashboard'])->name('merchant.dashboard');
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/merchant/qrcode', [MerchantController::class, 'downloadQrCode'])->name('merchant.qrcode');
     Route::get('/merchant/export', [MerchantController::class, 'export'])->name('merchant.export');
     Route::post('/merchant/transactions/{transaction}/refund', [MerchantController::class, 'refund'])->name('merchant.refund');
+    
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/phone', [ProfileController::class, 'updatePhone'])->name('profile.phone');
+    Route::post('/profile/pin', [ProfileController::class, 'updatePin'])->name('profile.pin');
+    Route::post('/profile/notifications', [ProfileController::class, 'updateNotifications'])->name('profile.notifications');
+    
+    // Notifications
     Route::post('/notifications/{id}/read', function($id) {
-    $notification = auth()->user()->notifications()->findOrFail($id);
-    $notification->markAsRead();
-    return redirect()->back()->with('success', 'Notification marquée comme lue');
-        }   )->name('notification.read');
-
+        $notification = auth()->user()->notifications()->findOrFail($id);
+        $notification->markAsRead();
+        return redirect()->back()->with('success', 'Notification marquée comme lue');
+    })->name('notification.read');
+    
     Route::post('/notifications/mark-all-read', function() {
-    auth()->user()->unreadNotifications->markAsRead();
-    return redirect()->back()->with('success', 'Toutes les notifications ont été marquées comme lues');
-        })->name('notifications.mark-all-read');
+        auth()->user()->unreadNotifications->markAsRead();
+        return redirect()->back()->with('success', 'Toutes les notifications ont été marquées comme lues');
+    })->name('notifications.mark-all-read');
 });

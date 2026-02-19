@@ -15,6 +15,9 @@
                     <a href="{{ route('merchant.dashboard') }}" class="text-white hover:text-secondary transition">
                         <i class="fas fa-store mr-1"></i>Dashboard Marchand
                     </a>
+                    <a href="{{ route('profile.index') }}" class="text-white hover:text-secondary transition">
+                        <i class="fas fa-user-circle mr-1"></i>Profil
+                    </a>
                     @endif
                     
                     <div class="relative" x-data="{ open: false }">

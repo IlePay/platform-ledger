@@ -42,6 +42,7 @@ class User extends Authenticatable implements FilamentUser
         'qr_code',
         'total_sales',
         'sales_count',  
+        'avatar',
     ];
 
     protected $hidden = [
