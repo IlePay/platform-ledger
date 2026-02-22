@@ -99,6 +99,31 @@ class DashboardController extends Controller
         if (!$recipient) return back()->withErrors(['error' => 'Destinataire introuvable']);
         if (!$user->canTransfer($validated['amount'])) return back()->withErrors(['error' => 'Limite dépassée']);
 
+        // Fraud detection
+        $fraudDetector = app(\App\Services\Fraud\FraudDetector::class);
+        $alerts = $fraudDetector->checkTransaction(
+            $user->id,
+            $validated['amount'],
+            $recipient->id,
+            $request->ip()
+        );
+
+        if (!empty($alerts)) {
+            // Log alerts
+            $fraudDetector->logAlerts($user->id, null, $alerts);
+            
+            // Auto-block si critique
+            if ($fraudDetector->autoBlockIfCritical($user->id, $alerts)) {
+                return back()->withErrors(['error' => 'Compte bloqué pour activité suspecte. Contactez le support.']);
+            }
+            
+            // Warning si medium/high
+            $highAlerts = array_filter($alerts, fn($a) => in_array($a['severity'], ['HIGH', 'MEDIUM']));
+            if (!empty($highAlerts)) {
+                \Log::warning('Fraud alert', ['user_id' => $user->id, 'alerts' => $alerts]);
+            }
+        }
+
         $transfer = $this->ledger->createTransfer(\Str::uuid(), $user->ledger_account_id, $recipient->ledger_account_id, $validated['amount'], 'XAF', "Transfert");
         if (!$transfer) return back()->withErrors(['error' => 'Échec']);
 
