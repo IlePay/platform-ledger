@@ -113,6 +113,10 @@
                         <option value="SHOP">Boutique / Magasin</option>
                         <option value="SERVICE">Service (Coiffure, Taxi, etc.)</option>
                         <option value="MARKET">Marché / Supermarché</option>
+                        <option value="REAL_ESTATE">Immobilier</option>
+                        <option value="UTILITIES">Services publics (Eau, Électricité)</option>
+                        <option value="EDUCATION">Éducation</option>
+                        <option value="RENT">Location</option>
                         <option value="OTHER">Autre</option>
                     </select>
                 </div>

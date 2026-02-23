@@ -90,7 +90,7 @@ class DashboardController extends Controller
 
     public function sendMoney(Request $request)
     {
-        $validated = $request->validate(['recipient_phone' => 'required', 'amount' => 'required|numeric|min:100', 'pin' => 'required']);
+        $validated = $request->validate(['recipient_phone' => 'required', 'amount' => 'required|numeric|min:100', 'reference' => 'nullable|string|max:100', 'pin' => 'required']);
         $user = auth()->user();
 
         if (!\Hash::check($validated['pin'], $user->pin)) return back()->withErrors(['error' => 'PIN incorrect']);
@@ -127,7 +127,11 @@ class DashboardController extends Controller
         $transfer = $this->ledger->createTransfer(\Str::uuid(), $user->ledger_account_id, $recipient->ledger_account_id, $validated['amount'], 'XAF', "Transfert");
         if (!$transfer) return back()->withErrors(['error' => 'Échec']);
 
-        Transaction::create(['ledger_transaction_id' => $transfer['id'], 'idempotency_key' => $transfer['idempotency_key'], 'from_user_id' => $user->id, 'to_user_id' => $recipient->id, 'from_account_id' => $user->ledger_account_id, 'to_account_id' => $recipient->ledger_account_id, 'amount' => $validated['amount'], 'currency' => 'XAF', 'type' => 'TRANSFER', 'status' => 'COMPLETED', 'description' => "Transfert", 'completed_at' => now()]);
+        Transaction::create(['ledger_transaction_id' => $transfer['id'], 'idempotency_key' => $transfer['idempotency_key'], 'from_user_id' => $user->id, 'to_user_id' => $recipient->id, 'from_account_id' => $user->ledger_account_id, 'to_account_id' => $recipient->ledger_account_id, 'amount' => $validated['amount'], 'currency' => 'XAF', 'type' => 'TRANSFER', 'status' => 'COMPLETED', 'description' => "Transfert", 'completed_at' => now(), 'metadata' => json_encode([
+        'reference' => $validated['reference'] ?? null,
+        'ip_address' => $request->ip(),
+        'user_agent' => $request->userAgent(),
+    ]),]);
 
         $recipient->notify(new \App\Notifications\PaymentReceived($validated['amount'], $user->full_name, "Transfert"));
         if ($recipient->sms_notifications) app(\App\Services\SMS\SmsManager::class)->sendPaymentReceived($recipient->phone, $validated['amount'], $user->full_name);

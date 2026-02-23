@@ -32,6 +32,24 @@ class SystemSettingsSeeder extends Seeder
             // Email
             ['key' => 'email_support', 'value' => 'support@ilepay.com', 'type' => 'string', 'category' => 'EMAIL', 'description' => 'Email support'],
             ['key' => 'email_from_name', 'value' => 'IlePay', 'type' => 'string', 'category' => 'EMAIL', 'description' => 'Nom expéditeur'],
+
+            // Features additionnelles
+            ['key' => 'feature_multi_currency', 'value' => '1', 'type' => 'boolean', 'category' => 'FEATURES', 'description' => 'Support multi-devises'],
+            ['key' => 'feature_email_notifications', 'value' => '1', 'type' => 'boolean', 'category' => 'FEATURES', 'description' => 'Notifications email'],
+            ['key' => 'feature_export_transactions', 'value' => '1', 'type' => 'boolean', 'category' => 'FEATURES', 'description' => 'Export transactions (PDF/CSV)'],
+            ['key' => 'feature_merchant_refunds', 'value' => '1', 'type' => 'boolean', 'category' => 'FEATURES', 'description' => 'Remboursements marchands'],
+            ['key' => 'feature_custom_commission', 'value' => '1', 'type' => 'boolean', 'category' => 'FEATURES', 'description' => 'Commission personnalisée'],
+            ['key' => 'feature_kyc_verification', 'value' => '1', 'type' => 'boolean', 'category' => 'FEATURES', 'description' => 'Vérification KYC'],
+            ['key' => 'feature_fraud_detection', 'value' => '1', 'type' => 'boolean', 'category' => 'FEATURES', 'description' => 'Détection fraude'],
+
+            // Limites système
+            ['key' => 'max_transaction_amount', 'value' => '10000000', 'type' => 'number', 'category' => 'LIMITS', 'description' => 'Montant max transaction (XAF)'],
+            ['key' => 'min_transaction_amount', 'value' => '100', 'type' => 'number', 'category' => 'LIMITS', 'description' => 'Montant min transaction (XAF)'],
+
+            // Maintenance
+            ['key' => 'maintenance_mode', 'value' => '0', 'type' => 'boolean', 'category' => 'GENERAL', 'description' => 'Mode maintenance'],
+            ['key' => 'maintenance_message', 'value' => 'IlePay est en maintenance. Merci de revenir plus tard.', 'type' => 'string', 'category' => 'GENERAL', 'description' => 'Message maintenance'],
+                    
         ];
 
         foreach ($settings as $setting) {

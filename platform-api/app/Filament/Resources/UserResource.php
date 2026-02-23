@@ -81,6 +81,22 @@ class UserResource extends Resource
                     ->nullable()
                     ->visible(fn($get) => $get('account_type') === 'MERCHANT')
                     ->helperText('Laisser vide pour utiliser la commission globale (1.5%)'),
+
+                    Forms\Components\Select::make('business_type')
+                    ->label('Type d\'entreprise')
+                    ->options([
+                        'RESTAURANT' => 'Restaurant',
+                        'MARKET' => 'Marché/Supermarché',
+                        'BOUTIQUE' => 'Boutique',
+                        'SERVICE' => 'Service',
+                        'REAL_ESTATE' => 'Immobilier', // NOUVEAU
+                        'UTILITIES' => 'Services publics', // NOUVEAU
+                        'EDUCATION' => 'Éducation', // NOUVEAU
+                        'RENT' => 'Location', // NOUVEAU
+                        'OTHER' => 'Autre',
+                    ])
+                    ->visible(fn($get) => $get('account_type') === 'MERCHANT')
+                    ->required(),
             ]);
 
             

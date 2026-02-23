@@ -131,6 +131,9 @@ class MerchantController extends Controller
         $validated = $request->validate([
             'amount' => 'required|numeric|min:100',
             'pin' => 'required|string',
+            'property_reference' => 'nullable|string|max:100', 
+            'rental_period' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:255',
         ]);
 
         $customer = auth()->user();
@@ -182,6 +185,9 @@ class MerchantController extends Controller
                 'commission' => $commission,
                 'commission_rate' => $commissionRate,
                 'net_amount' => $amountAfterCommission,
+                'property_reference' => $validated['property_reference'] ?? null,
+                'rental_period' => $validated['rental_period'] ?? null,
+                'notes' => $validated['notes'] ?? null,
             ]),
             'completed_at' => now(),
         ]);

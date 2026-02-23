@@ -1,7 +1,5 @@
 @extends('client.layout')
-
 @section('title', 'Payer ' . $merchant->business_name)
-
 @section('content')
 <div class="min-h-screen bg-gray-50">
     <!-- Header -->
@@ -19,17 +17,41 @@
         <div class="max-w-md mx-auto">
             <div class="bg-white rounded-2xl shadow-lg p-8">
                 <h2 class="text-xl font-bold mb-6 text-center">Effectuer un paiement</h2>
-
+                
                 @if($errors->any())
-                    <div class="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
-                        {{ $errors->first() }}
-                    </div>
+                <div class="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
+                    {{ $errors->first() }}
+                </div>
                 @endif
-
+                
                 @auth
                 <form action="{{ route('merchant.pay.process', $merchant->qr_code) }}" method="POST" class="space-y-6">
                     @csrf
-                    
+
+                    <!-- Si type REAL_ESTATE ou RENT -->
+                    @if(in_array($merchant->business_type, ['REAL_ESTATE', 'RENT']))
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Référence bien/logement (optionnel)</label>
+                        <input type="text" name="property_reference" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                               placeholder="Ex: APPT-12-DOUALA">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Période (optionnel)</label>
+                        <input type="text" name="rental_period" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                               placeholder="Ex: Février 2026">
+                    </div>
+                    @endif
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Notes (optionnel)</label>
+                        <input type="text" name="notes" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                               placeholder="Informations complémentaires">
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Montant à payer
