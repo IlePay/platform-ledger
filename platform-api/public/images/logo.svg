@@ -1,0 +1,8 @@
+<svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icône stylisée -->
+  <path d="M10 8L20 4L30 8L20 36L10 8Z" fill="#2D4B9E"/>
+  <path d="M20 4L30 8L20 20L10 8L20 4Z" fill="#F9B233"/>
+  
+  <!-- Texte IlePay -->
+  <text x="38" y="28" font-family="Arial, sans-serif" font-weight="bold" font-size="20" fill="#2D4B9E">IlePay</text>
+</svg>

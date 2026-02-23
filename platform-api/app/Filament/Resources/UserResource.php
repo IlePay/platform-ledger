@@ -71,7 +71,19 @@ class UserResource extends Resource
                             ->label('Compte actif')
                             ->required(),
                     ])->columns(2),
+
+                    Forms\Components\TextInput::make('custom_commission')
+                    ->label('Commission personnalisée (%)')
+                    ->numeric()
+                    ->step(0.1)
+                    ->minValue(0)
+                    ->maxValue(100)
+                    ->nullable()
+                    ->visible(fn($get) => $get('account_type') === 'MERCHANT')
+                    ->helperText('Laisser vide pour utiliser la commission globale (1.5%)'),
             ]);
+
+            
     }
 
     public static function table(Table $table): Table
@@ -104,6 +116,12 @@ class UserResource extends Resource
                         'primary' => 'STANDARD',
                         'success' => 'PREMIUM',
                     ]),
+
+                Tables\Columns\TextColumn::make('custom_commission')
+                    ->label('Commission')
+                    ->suffix('%')
+                    ->default('Global (1.5%)')
+                    ->toggleable(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Actif')
                     ->boolean(),

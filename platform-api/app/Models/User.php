@@ -49,6 +49,7 @@ class User extends Authenticatable implements FilamentUser
         'two_factor_enabled',
         'last_login_at',
         'last_login_ip',
+        'custom_commission',
     ];
 
     protected $hidden = [
@@ -207,5 +208,21 @@ class User extends Authenticatable implements FilamentUser
         if ($lastLogin->device_type !== $currentDevice) return true;
         
         return false;
+    }
+    public function supportTickets()
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
+
+    // Obtenir la commission applicable
+    public function getCommissionRate(): float
+    {
+        // Si commission custom définie, l'utiliser
+        if ($this->custom_commission !== null) {
+            return $this->custom_commission;
+        }
+        
+        // Sinon, utiliser la commission globale
+        return SystemSetting::getValue('merchant_commission', 1.5);
     }
 }

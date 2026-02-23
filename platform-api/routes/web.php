@@ -33,12 +33,12 @@ Route::middleware('auth')->get('/api/notifications/check', function() {
         ])
     ]);
 });
-// 2FA (public)
+    // 2FA (public)
     Route::get('/2fa/verify', [\App\Http\Controllers\Client\TwoFactorController::class, 'showVerify'])->name('2fa.verify');
     Route::post('/2fa/verify', [\App\Http\Controllers\Client\TwoFactorController::class, 'verify'])->name('2fa.verify.submit');
     Route::post('/2fa/resend', [\App\Http\Controllers\Client\TwoFactorController::class, 'resend'])->name('2fa.resend');
-// Client Dashboard (PROTECTED)
-Route::middleware(['auth'])->group(function () {
+    // Client Dashboard (PROTECTED)
+    Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('client.logout');
     
     Route::get('/dashboard', [ClientDashboardController::class, 'index'])->name('client.dashboard');
@@ -58,6 +58,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/profile/pin', [ProfileController::class, 'updatePin'])->name('profile.pin');
     Route::post('/profile/notifications', [ProfileController::class, 'updateNotifications'])->name('profile.notifications');
     
+    // Support tickets
+    Route::get('/support', [\App\Http\Controllers\Client\SupportController::class, 'index'])->name('support.index');
+    Route::get('/support/create', [\App\Http\Controllers\Client\SupportController::class, 'create'])->name('support.create');
+    Route::post('/support', [\App\Http\Controllers\Client\SupportController::class, 'store'])->name('support.store');
+    Route::get('/support/{id}', [\App\Http\Controllers\Client\SupportController::class, 'show'])->name('support.show');
+    Route::post('/support/{id}/reply', [\App\Http\Controllers\Client\SupportController::class, 'reply'])->name('support.reply');
+        
     // Security
     Route::post('/security/2fa/toggle', [\App\Http\Controllers\Client\TwoFactorController::class, 'toggle'])->name('security.2fa.toggle');
     Route::get('/security/history', [\App\Http\Controllers\Client\TwoFactorController::class, 'history'])->name('security.history');
@@ -87,4 +94,12 @@ Route::middleware(['auth'])->group(function () {
         auth()->user()->unreadNotifications->markAsRead();
         return redirect()->back()->with('success', 'Toutes les notifications ont été marquées comme lues');
     })->name('notifications.mark-all-read');
+
+    // Admin PDF Export
+    Route::middleware('auth')->get('/admin/report/{id}/pdf', function($id) {
+        $report = \App\Models\RevenueReport::findOrFail($id);
+        
+        // Simple HTML export (sans PDF lib pour l'instant)
+        return view('admin.report-html', compact('report'));
+    })->name('admin.report.pdf');
 });

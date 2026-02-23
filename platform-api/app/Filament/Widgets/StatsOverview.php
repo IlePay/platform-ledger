@@ -20,7 +20,7 @@ class StatsOverview extends BaseWidget
             Stat::make('Total Utilisateurs', $totalUsers)
                 ->description('Utilisateurs inscrits')
                 ->descriptionIcon('heroicon-m-users')
-                ->color('success')
+                ->color('primary')
                 ->chart([7, 12, 15, 18, 22, 25, $totalUsers]),
             
             Stat::make('Utilisateurs Actifs', $activeUsers)

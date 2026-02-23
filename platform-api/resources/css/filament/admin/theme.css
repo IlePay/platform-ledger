@@ -1,0 +1,89 @@
+@import '/vendor/filament/filament/resources/css/theme.css';
+
+@config 'tailwind.config.js';
+
+/* ===== SIDEBAR BLEUE ILEPAY UNIQUEMENT ===== */
+
+/* Sidebar bleue IlePay */
+.fi-sidebar,
+.fi-sidebar-nav,
+aside[class*="fi-sidebar"] {
+    background-color: #2D4B9E !important;
+}
+
+/* TOUS les liens sidebar - BLANC */
+.fi-sidebar-item-button,
+.fi-sidebar-item-button-label,
+.fi-sidebar a,
+.fi-sidebar-nav a,
+.fi-sidebar-item span {
+    color: #FFFFFF !important;
+}
+
+/* Dashboard link */
+.fi-sidebar-item-button:not(.fi-active) {
+    color: #FFFFFF !important;
+}
+
+/* Sidebar item hover */
+.fi-sidebar-item-button:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Sidebar item actif (jaune) */
+.fi-sidebar-item-button[aria-current="page"],
+.fi-active > .fi-sidebar-item-button,
+.fi-sidebar-item.fi-active .fi-sidebar-item-button {
+    background-color: #F9B233 !important;
+}
+
+.fi-active > .fi-sidebar-item-button *,
+.fi-sidebar-item.fi-active .fi-sidebar-item-button * {
+    color: #2D4B9E !important;
+    font-weight: 700;
+}
+
+/* Icônes sidebar - BLANC */
+.fi-sidebar svg,
+.fi-sidebar-item-button svg,
+.fi-sidebar-item-icon svg {
+    color: #FFFFFF !important;
+}
+
+/* Icône active - BLEU */
+.fi-active svg,
+.fi-sidebar-item.fi-active svg {
+    color: #2D4B9E !important;
+}
+
+/* GROUPES SIDEBAR - BLANC + GRAS */
+.fi-sidebar-group-label,
+.fi-sidebar-group-label span {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+/* Badge compteur SIDEBAR UNIQUEMENT */
+.fi-sidebar .fi-badge,
+.fi-sidebar-item-badge {
+    background-color: #F9B233 !important;
+    color: #2D4B9E !important;
+    font-weight: bold;
+}
+
+/* Header sidebar */
+.fi-sidebar-header {
+    background-color: #1D2F66 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Footer sidebar */
+.fi-sidebar-footer {
+    background-color: #1D2F66 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ===== FIN SIDEBAR - RESTE DU SITE EN COULEURS STANDARDS ===== */

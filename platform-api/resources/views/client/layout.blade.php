@@ -123,6 +123,10 @@
                         <i class="fas fa-user-circle text-2xl"></i>
                     </a>
                     
+                    <a href="{{ route('support.index') }}" class="text-gray-600 hover:text-primary" title="Support">
+                        <i class="fas fa-life-ring text-2xl"></i>
+                    </a>
+
                     <!-- Déconnexion -->
                     <form action="{{ route('client.logout') }}" method="POST" class="inline">
                         @csrf

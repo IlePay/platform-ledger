@@ -15,74 +15,74 @@ class MerchantController extends Controller
     }
 
     public function refund(Request $request, $transactionId)
-{
-    $transaction = \App\Models\Transaction::findOrFail($transactionId);
-    
-    // Vérifie que c'est le marchand qui a reçu le paiement
-    if ($transaction->to_user_id !== auth()->id()) {
-        abort(403, 'Non autorisé');
-    }
-    
-    // Vérifie pas déjà remboursé
-    if ($transaction->isRefunded()) {
-        return back()->withErrors(['error' => 'Transaction déjà remboursée']);
-    }
-    
-    $validated = $request->validate([
-        'amount' => 'required|numeric|min:1|max:' . $transaction->amount,
-        'reason' => 'nullable|string|max:255',
-    ]);
-    
-    // Crée le transfert de remboursement
-    $refund = $this->ledger->createTransfer(
-        \Str::uuid()->toString(),
-        auth()->user()->ledger_account_id, // Marchand
-        $transaction->fromUser->ledger_account_id, // Client original
-        $validated['amount'],
-        'XAF',
-        $validated['reason'] ?? "Remboursement transaction #{$transaction->id}"
-    );
-    
-    if (!$refund) {
-        return back()->withErrors(['error' => 'Échec du remboursement - solde insuffisant ?']);
-    }
-    
-    // Enregistre le remboursement
-    \App\Models\Transaction::create([
-        'ledger_transaction_id' => $refund['id'],
-        'idempotency_key' => $refund['idempotency_key'],
-        'from_user_id' => auth()->id(),
-        'to_user_id' => $transaction->from_user_id,
-        'from_account_id' => auth()->user()->ledger_account_id,
-        'to_account_id' => $transaction->fromUser->ledger_account_id,
-        'amount' => $validated['amount'],
-        'currency' => 'XAF',
-        'type' => 'REFUND',
-        'status' => 'COMPLETED',
-        'description' => $validated['reason'] ?? "Remboursement",
-        'parent_transaction_id' => $transaction->id,
-        'completed_at' => now(),
-    ]);
-    
-    // Marque l'originale comme remboursée
-    $transaction->update(['refunded_at' => now()]);
-    
-    // Notifie le client
-    $transaction->fromUser->notify(new \App\Notifications\RefundReceived(
-        $validated['amount'],
-        auth()->user()->business_name ?? auth()->user()->full_name
-    ));
+    {
+        $transaction = \App\Models\Transaction::findOrFail($transactionId);
+        
+        // Vérifie que c'est le marchand qui a reçu le paiement
+        if ($transaction->to_user_id !== auth()->id()) {
+            abort(403, 'Non autorisé');
+        }
+        
+        // Vérifie pas déjà remboursé
+        if ($transaction->isRefunded()) {
+            return back()->withErrors(['error' => 'Transaction déjà remboursée']);
+        }
+        
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:1|max:' . $transaction->amount,
+            'reason' => 'nullable|string|max:255',
+        ]);
+        
+        // Crée le transfert de remboursement
+        $refund = $this->ledger->createTransfer(
+            \Str::uuid()->toString(),
+            auth()->user()->ledger_account_id, // Marchand
+            $transaction->fromUser->ledger_account_id, // Client original
+            $validated['amount'],
+            'XAF',
+            $validated['reason'] ?? "Remboursement transaction #{$transaction->id}"
+        );
+        
+        if (!$refund) {
+            return back()->withErrors(['error' => 'Échec du remboursement - solde insuffisant ?']);
+        }
+        
+        // Enregistre le remboursement
+        \App\Models\Transaction::create([
+            'ledger_transaction_id' => $refund['id'],
+            'idempotency_key' => $refund['idempotency_key'],
+            'from_user_id' => auth()->id(),
+            'to_user_id' => $transaction->from_user_id,
+            'from_account_id' => auth()->user()->ledger_account_id,
+            'to_account_id' => $transaction->fromUser->ledger_account_id,
+            'amount' => $validated['amount'],
+            'currency' => 'XAF',
+            'type' => 'REFUND',
+            'status' => 'COMPLETED',
+            'description' => $validated['reason'] ?? "Remboursement",
+            'parent_transaction_id' => $transaction->id,
+            'completed_at' => now(),
+        ]);
+        
+        // Marque l'originale comme remboursée
+        $transaction->update(['refunded_at' => now()]);
+        
+        // Notifie le client
+        $transaction->fromUser->notify(new \App\Notifications\RefundReceived(
+            $validated['amount'],
+            auth()->user()->business_name ?? auth()->user()->full_name
+        ));
 
-    if ($transaction->fromUser->sms_notifications) {
-    app(\App\Services\SMS\SmsManager::class)->sendRefundReceived(
-        $transaction->fromUser->phone,
-        $validated['amount'],
-        auth()->user()->business_name ?? auth()->user()->full_name
-    );
+        if ($transaction->fromUser->sms_notifications) {
+        app(\App\Services\SMS\SmsManager::class)->sendRefundReceived(
+            $transaction->fromUser->phone,
+            $validated['amount'],
+            auth()->user()->business_name ?? auth()->user()->full_name
+        );
+        }
+        
+        return back()->with('success', "Remboursement de {$validated['amount']} XAF effectué !");
     }
-    
-    return back()->with('success', "Remboursement de {$validated['amount']} XAF effectué !");
-}
 
     // Page publique de paiement (scan QR)
     public function paymentPage($qrCode)
@@ -98,32 +98,32 @@ class MerchantController extends Controller
     }
 
    public function downloadQrCode()
-{
-    $user = auth()->user();
-    
-    if ($user->account_type !== 'MERCHANT') {
-        abort(403);
+    {
+        $user = auth()->user();
+        
+        if ($user->account_type !== 'MERCHANT') {
+            abort(403);
+        }
+        
+        $url = url('/pay/' . $user->qr_code);
+        
+        // Utilise l'API Google Charts pour générer le QR Code
+        $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?' . http_build_query([
+            'size' => '400x400',
+            'data' => $url,
+            'color' => '2D4B9E',
+            'bgcolor' => 'FFFFFF',
+            'margin' => 20,
+            'format' => 'png'
+        ]);
+        
+        // Télécharge l'image
+        $imageContent = file_get_contents($qrCodeUrl);
+        
+        return response($imageContent)
+            ->header('Content-Type', 'image/png')
+            ->header('Content-Disposition', 'attachment; filename="qrcode-' . $user->qr_code . '.png"');
     }
-    
-    $url = url('/pay/' . $user->qr_code);
-    
-    // Utilise l'API Google Charts pour générer le QR Code
-    $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?' . http_build_query([
-        'size' => '400x400',
-        'data' => $url,
-        'color' => '2D4B9E',
-        'bgcolor' => 'FFFFFF',
-        'margin' => 20,
-        'format' => 'png'
-    ]);
-    
-    // Télécharge l'image
-    $imageContent = file_get_contents($qrCodeUrl);
-    
-    return response($imageContent)
-        ->header('Content-Type', 'image/png')
-        ->header('Content-Disposition', 'attachment; filename="qrcode-' . $user->qr_code . '.png"');
-}
 
     // Traitement du paiement
     public function processPay(Request $request, $qrCode)
@@ -146,12 +146,17 @@ class MerchantController extends Controller
             return back()->withErrors(['error' => 'Montant supérieur à votre limite']);
         }
 
-        // Créer le transfert
+        // NOUVEAU : Calculer la commission
+        $commissionRate = $merchant->getCommissionRate(); // Utilise commission custom ou globale
+        $commission = $validated['amount'] * ($commissionRate / 100);
+        $amountAfterCommission = $validated['amount'] - $commission;
+
+        // Créer le transfert (montant APRÈS commission pour le marchand)
         $transfer = $this->ledger->createTransfer(
             \Str::uuid()->toString(),
             $customer->ledger_account_id,
             $merchant->ledger_account_id,
-            $validated['amount'],
+            $amountAfterCommission, // CHANGÉ : montant net
             'XAF',
             "Paiement chez {$merchant->business_name}"
         );
@@ -168,29 +173,35 @@ class MerchantController extends Controller
             'to_user_id' => $merchant->id,
             'from_account_id' => $customer->ledger_account_id,
             'to_account_id' => $merchant->ledger_account_id,
-            'amount' => $validated['amount'],
+            'amount' => $validated['amount'], // Montant TOTAL payé par client
             'currency' => 'XAF',
-            'type' => 'TRANSFER',
+            'type' => 'PAYMENT',
             'status' => 'COMPLETED',
-            'description' => "Paiement chez {$merchant->business_name}",
+            'description' => "Paiement chez {$merchant->business_name} (Commission: {$commission} XAF)",
+            'metadata' => json_encode([
+                'commission' => $commission,
+                'commission_rate' => $commissionRate,
+                'net_amount' => $amountAfterCommission,
+            ]),
             'completed_at' => now(),
         ]);
 
-        // Mettre à jour les stats du marchand
+        // Mettre à jour les stats du marchand (montant NET)
         $merchant->increment('sales_count');
-        $merchant->increment('total_sales', $validated['amount']);
+        $merchant->increment('total_sales', $amountAfterCommission);
+
         // Envoie notification au marchand
         $merchant->notify(new \App\Notifications\PaymentReceived(
-            $validated['amount'],
+            $amountAfterCommission,
             $customer->full_name,
-            "Paiement chez {$merchant->business_name}"
+            "Paiement de {$validated['amount']} XAF (net: {$amountAfterCommission} XAF après commission {$commissionRate}%)"
         ));
 
         // SMS au marchand
         if ($merchant->sms_notifications) {
             app(\App\Services\SMS\SmsManager::class)->sendPaymentReceived(
                 $merchant->phone,
-                $validated['amount'],
+                $amountAfterCommission,
                 $customer->full_name
             );
         }
